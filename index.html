@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💕 我们的恋爱点滴</title>
+<style>
+  :root {
+    --pink: #ff6b9d;
+    --pink-light: #ffb3d0;
+    --pink-lighter: #ffe0ec;
+    --rose: #e8536c;
+    --white: #ffffff;
+    --text: #4a3040;
+    --text-light: #7a6070;
+    --gold: #f0c060;
+    --shadow: 0 4px 20px rgba(255, 107, 157, 0.15);
+    --shadow-lg: 0 10px 40px rgba(255, 107, 157, 0.2);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', sans-serif;
+    background: linear-gradient(135deg, #fff5f8 0%, #ffe8f0 30%, #fff0f5 60%, #ffe8ee 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    color: var(--text);
+    overflow-x: hidden;
+  }
+
+  /* ===== 浮动装饰粒子 ===== */
+  .particles {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .particle {
+    position: absolute;
+    font-size: 24px;
+    animation: floatUp linear infinite;
+    opacity: 0.6;
+  }
+  @keyframes floatUp {
+    0% { transform: translateY(105vh) rotate(0deg) scale(0); opacity: 0; }
+    10% { opacity: 0.6; transform: translateY(90vh) rotate(36deg) scale(1); }
+    90% { opacity: 0.6; transform: translateY(10vh) rotate(324deg) scale(1); }
+    100% { transform: translateY(-5vh) rotate(360deg) scale(0); opacity: 0; }
+  }
+
+  /* ===== 头部 ===== */
+  .header {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 60px 20px 30px;
+  }
+  .header-hearts {
+    font-size: 48px;
+    animation: heartbeat 1.2s ease-in-out infinite;
+    display: inline-block;
+  }
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    15% { transform: scale(1.15); }
+    30% { transform: scale(1); }
+    45% { transform: scale(1.15); }
+    60% { transform: scale(1); }
+  }
+  .header h1 {
+    font-size: 2.5em;
+    background: linear-gradient(135deg, var(--rose), var(--pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 10px 0 5px;
+    font-weight: 800;
+    letter-spacing: 2px;
+  }
+  .header .subtitle {
+    font-size: 1.1em;
+    color: var(--text-light);
+    letter-spacing: 3px;
+  }
+
+  /* ===== 日记信息栏 ===== */
+  .diary-info-bar {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 0 20px 15px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .invite-code-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-size: 0.95em;
+    color: var(--rose);
+  }
+  .invite-code-badge code {
+    background: var(--pink-lighter);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    letter-spacing: 2px;
+    color: var(--rose);
+    font-family: 'Courier New', monospace;
+  }
+  .online-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8em;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+  .online-badge.online {
+    background: #d4edda;
+    color: #155724;
+  }
+  .online-badge.offline {
+    background: #f0f0f0;
+    color: #999;
+  }
+  .online-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .online .online-dot { background: #28a745; animation: pulse-dot 1.5s infinite; }
+  .offline .online-dot { background: #ccc; }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ===== Toast 提示 ===== */
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    background: white;
+    padding: 14px 28px;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    font-size: 0.95em;
+    font-weight: 600;
+    letter-spacing: 1px;
+    animation: toastIn 0.4s ease, toastOut 0.4s ease 2s forwards;
+    pointer-events: none;
+  }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+  @keyframes toastOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  /* ===== 按钮 ===== */
+  .btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.95em;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--rose), var(--pink));
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 107, 157, 0.3);
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 157, 0.4);
+  }
+  .btn-outline {
+    background: white;
+    color: var(--pink);
+    border: 2px solid var(--pink);
+  }
+  .btn-outline:hover {
+    background: var(--pink-lighter);
+  }
+  .btn-sm {
+    padding: 6px 14px;
+    font-size: 0.8em;
+    border-radius: 8px;
+  }
+  .btn-danger {
+    background: #fff0f0;
+    color: #e85353;
+    border: 1px solid #fcc;
+  }
+  .btn-danger:hover {
+    background: #ffe0e0;
+  }
+  .btn-share {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  }
+  .btn-share:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+  .btn-green {
+    background: linear-gradient(135deg, #43e97b, #38f9d7);
+    color: #1a5c3a;
+    box-shadow: 0 4px 15px rgba(67, 233, 123, 0.3);
+    font-weight: 700;
+  }
+  .btn-green:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(67, 233, 123, 0.4);
+  }
+  .btn-lg {
+    padding: 16px 40px;
+    font-size: 1.2em;
+    border-radius: 20px;
+  }
+
+  /* ===== 着陆页 ===== */
+  .landing-page {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+    padding: 20px;
+  }
+  .landing-card {
+    background: var(--white);
+    border-radius: 30px;
+    padding: 50px 40px;
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+    max-width: 500px;
+    width: 100%;
+  }
+  .landing-card .landing-icon {
+    font-size: 4em;
+    margin-bottom: 15px;
+  }
+  .landing-card h2 {
+    font-size: 1.6em;
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, var(--rose), var(--pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .landing-card .landing-desc {
+    color: var(--text-light);
+    font-size: 0.9em;
+    margin-bottom: 30px;
+    letter-spacing: 1px;
+    line-height: 1.8;
+  }
+  .landing-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .landing-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-light);
+    font-size: 0.85em;
+    letter-spacing: 1px;
+  }
+  .landing-divider::before,
+  .landing-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--pink-lighter);
+  }
+  .join-row {
+    display: flex;
+    gap: 10px;
+  }
+  .join-row input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid var(--pink-light);
+    border-radius: 12px;
+    font-size: 1em;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-align: center;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  .join-row input:focus {
+    border-color: var(--pink);
+  }
+  .join-row input::placeholder {
+    letter-spacing: 1px;
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    font-size: 0.85em;
+  }
+
+  /* ===== 统计卡片 ===== */
+  .stats-row {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 0 20px 20px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .stat-card {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 20px 28px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    flex: 1;
+    min-width: 130px;
+    max-width: 200px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: default;
+  }
+  .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+  }
+  .stat-card .number {
+    font-size: 2.2em;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--rose), var(--pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .stat-card .label {
+    font-size: 0.85em;
+    color: var(--text-light);
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  /* ===== 纪念日设置 ===== */
+  .anniversary-section {
+    position: relative;
+    z-index: 1;
+    max-width: 700px;
+    margin: 0 auto 30px;
+    padding: 0 20px;
+  }
+  .anniversary-card {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 25px 30px;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .anniversary-card h3 {
+    font-size: 1.1em;
+    color: var(--text-light);
+    margin-bottom: 15px;
+    letter-spacing: 1px;
+  }
+  .anniversary-card .date-input-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .anniversary-card input[type="date"] {
+    padding: 10px 16px;
+    border: 2px solid var(--pink-light);
+    border-radius: 12px;
+    font-size: 1em;
+    font-family: inherit;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  .anniversary-card input[type="date"]:focus {
+    border-color: var(--pink);
+  }
+
+  /* ===== 设置面板 ===== */
+  .settings-panel {
+    position: relative;
+    z-index: 1;
+    max-width: 700px;
+    margin: 0 auto 25px;
+    padding: 0 20px;
+  }
+  .settings-card {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 25px 30px;
+    box-shadow: var(--shadow);
+  }
+  .settings-card h3 {
+    font-size: 1.1em;
+    margin-bottom: 15px;
+    letter-spacing: 1px;
+    color: var(--text);
+  }
+  .name-input-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .name-input-row input[type="text"] {
+    flex: 1;
+    min-width: 150px;
+    padding: 10px 16px;
+    border: 2px solid var(--pink-light);
+    border-radius: 12px;
+    font-size: 0.95em;
+    font-family: inherit;
+    color: var(--text);
+    outline: none;
+  }
+  .name-input-row input[type="text"]:focus {
+    border-color: var(--pink);
+  }
+
+  /* ===== 添加记忆表单 ===== */
+  .add-memory-section {
+    position: relative;
+    z-index: 1;
+    max-width: 700px;
+    margin: 0 auto 30px;
+    padding: 0 20px;
+  }
+  .add-memory-toggle {
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .add-memory-form {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 25px 30px;
+    box-shadow: var(--shadow);
+    display: none;
+  }
+  .add-memory-form.show { display: block; animation: slideDown 0.4s ease; }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .form-group {
+    margin-bottom: 16px;
+  }
+  .form-group label {
+    display: block;
+    font-size: 0.9em;
+    color: var(--text-light);
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    padding: 10px 16px;
+    border: 2px solid var(--pink-light);
+    border-radius: 12px;
+    font-size: 0.95em;
+    font-family: inherit;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.3s;
+    resize: vertical;
+  }
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    border-color: var(--pink);
+  }
+  .form-group textarea { min-height: 80px; }
+  .form-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .form-row .form-group { flex: 1; min-width: 150px; }
+  .image-preview {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .image-preview img {
+    width: 80px; height: 80px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 2px solid var(--pink-light);
+  }
+  .form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 5px;
+  }
+
+  /* ===== 时间线 ===== */
+  .timeline-section {
+    position: relative;
+    z-index: 1;
+    max-width: 750px;
+    margin: 0 auto 40px;
+    padding: 0 20px;
+  }
+  .timeline-section h2 {
+    text-align: center;
+    font-size: 1.5em;
+    margin-bottom: 30px;
+    color: var(--text);
+    letter-spacing: 2px;
+  }
+  .timeline {
+    position: relative;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, var(--pink-light), var(--pink), var(--rose));
+    border-radius: 2px;
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 35px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+  .timeline-item:nth-child(odd) .memory-card-wrapper {
+    margin-right: calc(50% + 35px);
+    margin-left: 0;
+  }
+  .timeline-item:nth-child(even) .memory-card-wrapper {
+    margin-left: calc(50% + 35px);
+    margin-right: 0;
+  }
+  .memory-card-wrapper {
+    width: calc(50% - 35px);
+    position: relative;
+  }
+  .timeline-dot {
+    position: absolute;
+    left: 50%;
+    top: 28px;
+    transform: translateX(-50%);
+    width: 18px;
+    height: 18px;
+    background: white;
+    border: 4px solid var(--pink);
+    border-radius: 50%;
+    z-index: 2;
+    box-shadow: 0 0 0 6px rgba(255, 107, 157, 0.12);
+  }
+  .memory-card {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: var(--shadow);
+    transition: transform 0.3s, box-shadow 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .memory-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+  }
+  .memory-card .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75em;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    color: white;
+  }
+  .tag-纪念日 { background: linear-gradient(135deg, #f09819, #ff512f); }
+  .tag-旅行 { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+  .tag-美食 { background: linear-gradient(135deg, #fa709a, #fee140); }
+  .tag-日常 { background: linear-gradient(135deg, #a18cd1, #fbc2eb); }
+  .tag-惊喜 { background: linear-gradient(135deg, #f5576c, #ff6b9d); }
+  .tag-电影 { background: linear-gradient(135deg, #667eea, #764ba2); }
+  .tag-礼物 { background: linear-gradient(135deg, #f093fb, #f5576c); }
+  .tag-其他 { background: linear-gradient(135deg, #c1dfc4, #deecdd); color: #5a7a5a; }
+  .memory-card .date {
+    font-size: 0.85em;
+    color: var(--pink);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .memory-card .title {
+    font-size: 1.15em;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  .memory-card .desc {
+    font-size: 0.9em;
+    color: var(--text-light);
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+  .memory-card .author-badge {
+    display: inline-block;
+    font-size: 0.75em;
+    color: var(--pink);
+    margin-bottom: 6px;
+    opacity: 0.7;
+  }
+  .memory-card .photos {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .memory-card .photos img {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.3s;
+  }
+  .memory-card .photos img:hover {
+    transform: scale(1.05);
+  }
+  .memory-card .card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    justify-content: flex-end;
+  }
+
+  /* ===== 模态框 ===== */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 999;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+  }
+  .modal.show { display: flex; }
+  .modal img {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  /* ===== 底部 ===== */
+  .footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light);
+    font-size: 0.9em;
+    letter-spacing: 2px;
+  }
+  .footer .heart {
+    display: inline-block;
+    animation: heartbeat 1.2s ease-in-out infinite;
+    font-size: 1.3em;
+  }
+
+  /* ===== 筛选 ===== */
+  .filter-bar {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .filter-chip {
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 2px solid var(--pink-light);
+    background: white;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: inherit;
+    color: var(--text-light);
+    letter-spacing: 1px;
+  }
+  .filter-chip:hover,
+  .filter-chip.active {
+    background: var(--pink);
+    color: white;
+    border-color: var(--pink);
+  }
+
+  /* ===== 空状态 ===== */
+  .empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--text-light);
+  }
+  .empty-state .icon {
+    font-size: 4em;
+    margin-bottom: 15px;
+  }
+  .empty-state p {
+    font-size: 1em;
+    letter-spacing: 1px;
+  }
+
+  /* ===== 照片墙 ===== */
+  .gallery-section {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto 20px;
+    padding: 0 20px;
+    text-align: center;
+  }
+  .gallery-section h2 {
+    font-size: 1.5em;
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+  }
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+  }
+  .gallery-grid img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: transform 0.3s, box-shadow 0.3s;
+    box-shadow: var(--shadow);
+  }
+  .gallery-grid img:hover {
+    transform: scale(1.04);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* ===== 工具栏 ===== */
+  .toolbar {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 0 20px 15px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 640px) {
+    .header h1 { font-size: 1.8em; }
+    .timeline::before { left: 22px; }
+    .timeline-item:nth-child(odd) .memory-card-wrapper,
+    .timeline-item:nth-child(even) .memory-card-wrapper {
+      margin-left: 55px;
+      margin-right: 0;
+      width: calc(100% - 55px);
+    }
+    .timeline-dot { left: 22px; }
+    .stats-row { gap: 10px; }
+    .stat-card { padding: 14px 16px; min-width: 90px; }
+    .stat-card .number { font-size: 1.5em; }
+    .landing-card { padding: 30px 24px; }
+    .join-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 浮动装饰 -->
+<div class="particles" id="particles"></div>
+
+<!-- ===== 着陆页 ===== -->
+<div class="landing-page" id="landingPage">
+  <div class="landing-card">
+    <div class="landing-icon">💕</div>
+    <h2>恋爱点滴</h2>
+    <p class="landing-desc">
+      记录你们之间的每一刻心动<br>
+      通过邀请码与 TA 一起编辑 ✨
+    </p>
+    <div class="landing-actions">
+      <button class="btn btn-primary btn-lg" onclick="createDiary()">
+        ✨ 创建我们的日记
+      </button>
+      <div class="landing-divider">或者</div>
+      <div class="join-row">
+        <input type="text" id="joinCodeInput" placeholder="输入邀请码，如 LOVE-XXXX" maxlength="9" autocomplete="off">
+        <button class="btn btn-share" onclick="joinDiary()">💝 加入</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 日记主界面 ===== -->
+<div id="diaryApp" style="display:none;">
+
+<!-- 头部 -->
+<header class="header">
+  <div class="header-hearts">💕</div>
+  <h1>我们的恋爱点滴</h1>
+  <p class="subtitle">✧ 记录每一刻的心动 ✧</p>
+</header>
+
+<!-- 日记信息栏 -->
+<div class="diary-info-bar">
+  <div class="invite-code-badge">
+    🔑 邀请码 <code id="inviteCodeDisplay">----</code>
+    <button class="btn btn-sm btn-outline" onclick="copyInviteCode()" title="复制邀请码">📋</button>
+    <button class="btn btn-sm btn-share" onclick="copyInviteLink()" title="复制邀请链接">🔗</button>
+  </div>
+  <span class="online-badge offline" id="onlineBadge">
+    <span class="online-dot"></span> <span id="onlineText">离线</span>
+  </span>
+</div>
+
+<!-- 设置面板 -->
+<div class="settings-panel">
+  <div class="settings-card">
+    <h3>👤 你是谁？</h3>
+    <div class="name-input-row">
+      <input type="text" id="myNameInput" placeholder="输入你的昵称，如：小宝" maxlength="20">
+      <button class="btn btn-primary btn-sm" onclick="saveMyName()">💾 保存</button>
+    </div>
+    <p style="font-size:0.75em;color:var(--text-light);margin-top:8px;">
+      💡 设置昵称后，你和 TA 添加的每条记录都会标注是谁写的~
+    </p>
+  </div>
+</div>
+
+<!-- 工具栏 -->
+<div class="toolbar">
+  <button class="btn btn-outline btn-sm" onclick="exportData()">📥 导出数据</button>
+  <button class="btn btn-outline btn-sm" onclick="document.getElementById('importFileInput').click()">📤 导入数据</button>
+  <button class="btn btn-green btn-sm" onclick="generateShareHtml()">🔗 生成分享网页</button>
+  <button class="btn btn-danger btn-sm" onclick="leaveDiary()">🚪 退出日记</button>
+  <input type="file" id="importFileInput" accept=".love,.json" style="display:none" onchange="importData(event)">
+</div>
+
+<!-- 纪念日设置 & 统计 -->
+<div class="anniversary-section">
+  <div class="anniversary-card">
+    <h3>📅 设置我们的纪念日</h3>
+    <div class="date-input-row">
+      <input type="date" id="anniversaryInput" title="选择在一起的那一天">
+      <button class="btn btn-primary" onclick="setAnniversary()">💝 保存纪念日</button>
+    </div>
+  </div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="number" id="daysTogether">--</div>
+    <div class="label">💑 在一起</div>
+  </div>
+  <div class="stat-card">
+    <div class="number" id="memoryCount">0</div>
+    <div class="label">📝 甜蜜回忆</div>
+  </div>
+  <div class="stat-card">
+    <div class="number" id="photoCount">0</div>
+    <div class="label">📸 珍贵照片</div>
+  </div>
+</div>
+
+<!-- 添加记忆 -->
+<div class="add-memory-section">
+  <div class="add-memory-toggle">
+    <button class="btn btn-primary" id="toggleFormBtn" onclick="toggleForm()">💌 记录新的甜蜜时刻</button>
+  </div>
+  <div class="add-memory-form" id="addMemoryForm">
+    <div class="form-row">
+      <div class="form-group">
+        <label>📅 日期</label>
+        <input type="date" id="memDate">
+      </div>
+      <div class="form-group">
+        <label>🏷️ 分类</label>
+        <select id="memTag">
+          <option value="日常">🌤️ 日常</option>
+          <option value="纪念日">💝 纪念日</option>
+          <option value="旅行">✈️ 旅行</option>
+          <option value="美食">🍽️ 美食</option>
+          <option value="电影">🎬 电影</option>
+          <option value="惊喜">🎉 惊喜</option>
+          <option value="礼物">🎁 礼物</option>
+          <option value="其他">📌 其他</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>💬 标题</label>
+      <input type="text" id="memTitle" placeholder="给这一刻取个名字...">
+    </div>
+    <div class="form-group">
+      <label>📝 描述</label>
+      <textarea id="memDesc" placeholder="记录下你们的美好时光..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>📸 照片</label>
+      <input type="file" id="memPhotos" accept="image/*" multiple onchange="previewImages()">
+      <div class="image-preview" id="imagePreview"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="toggleForm()">取消</button>
+      <button class="btn btn-primary" onclick="addMemory()">💾 保存回忆</button>
+    </div>
+  </div>
+</div>
+
+<!-- 分类筛选 -->
+<div class="filter-bar" id="filterBar">
+  <button class="filter-chip active" onclick="filterMemories('all')">🌟 全部</button>
+  <button class="filter-chip" onclick="filterMemories('纪念日')">💝 纪念日</button>
+  <button class="filter-chip" onclick="filterMemories('旅行')">✈️ 旅行</button>
+  <button class="filter-chip" onclick="filterMemories('美食')">🍽️ 美食</button>
+  <button class="filter-chip" onclick="filterMemories('日常')">🌤️ 日常</button>
+  <button class="filter-chip" onclick="filterMemories('惊喜')">🎉 惊喜</button>
+  <button class="filter-chip" onclick="filterMemories('电影')">🎬 电影</button>
+  <button class="filter-chip" onclick="filterMemories('礼物')">🎁 礼物</button>
+</div>
+
+<!-- 时间线 -->
+<div class="timeline-section">
+  <h2>💕 我们的故事</h2>
+  <div class="timeline" id="timeline">
+    <div class="empty-state" id="emptyState">
+      <div class="icon">💌</div>
+      <p>还没有甜蜜回忆呢~<br>快点击上方按钮记录你们的第一刻吧！</p>
+    </div>
+  </div>
+</div>
+
+<!-- 照片墙 -->
+<div class="gallery-section" id="gallerySection" style="display:none;">
+  <h2>🖼️ 我们的照片墙</h2>
+  <div class="gallery-grid" id="galleryGrid"></div>
+</div>
+
+<!-- 图片大图模态框 -->
+<div class="modal" id="imageModal" onclick="closeModal()">
+  <img id="modalImage" src="" alt="照片">
+</div>
+
+<!-- 底部 -->
+<footer class="footer">
+  <p>用 <span class="heart">❤️</span> 记录我们的每一天</p>
+  <p style="font-size:0.75em;margin-top:4px;">Made with Love · Forever & Always</p>
+</footer>
+
+</div><!-- /diaryApp -->
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// ====== 全局状态 ======
+let currentDiaryCode = null;
+let memories = [];
+let currentFilter = 'all';
+let pendingImages = [];
+let socket = null;
+let partnerOnline = false;
+const USER_ID = getOrCreateUserId();
+const STORAGE_KEY_USER_ID = 'love_diary_user_id';
+const STORAGE_KEY_MY_NAME = 'love_diary_my_name';
+const STORAGE_KEY_DIARY_CODE = 'love_diary_current_code';
+
+// ====== 用户身份 ======
+function getOrCreateUserId() {
+  let id = localStorage.getItem(STORAGE_KEY_USER_ID);
+  if (!id) {
+    id = 'user_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    localStorage.setItem(STORAGE_KEY_USER_ID, id);
+  }
+  return id;
+}
+
+function loadMyName() {
+  return localStorage.getItem(STORAGE_KEY_MY_NAME) || '';
+}
+
+function saveMyNameToStore(name) {
+  localStorage.setItem(STORAGE_KEY_MY_NAME, name);
+}
+
+// ====== Toast ======
+function showToast(msg) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
+
+// ====== 图片压缩 ======
+function compressImage(file, maxW = 800, quality = 0.7) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (w > maxW) { h = (h * maxW) / w; w = maxW; }
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ====== Socket.IO 连接 ======
+function connectSocket() {
+  if (socket && socket.connected) return;
+
+  socket = io({ transports: ['websocket', 'polling'] });
+
+  socket.on('connect', () => {
+    console.log('🔌 WebSocket 已连接');
+    if (currentDiaryCode) {
+      socket.emit('join-diary', currentDiaryCode);
+    }
+  });
+
+  socket.on('room-info', (info) => {
+    if (info.onlineCount >= 2) {
+      setPartnerOnline(true);
+    }
+  });
+
+  socket.on('partner-joined', () => {
+    setPartnerOnline(true);
+    showToast('💕 TA 上线了！');
+  });
+
+  socket.on('partner-left', () => {
+    setPartnerOnline(false);
+    showToast('💤 TA 下线了');
+  });
+
+  // 🔥 实时事件：新回忆
+  socket.on('memory-added', (data) => {
+    const m = data.memory;
+    // 去重
+    if (!memories.find(ex => ex.id === m.id)) {
+      memories.push(m);
+      memories.sort((a, b) => new Date(b.date) - new Date(a.date));
+      updateStats();
+      renderTimeline();
+      renderGallery();
+      showToast(`💌 TA 添加了新回忆：「${m.title}」`);
+    }
+  });
+
+  // 🔥 实时事件：更新回忆
+  socket.on('memory-updated', (data) => {
+    const m = data.memory;
+    const idx = memories.findIndex(ex => ex.id === m.id);
+    if (idx >= 0) {
+      memories[idx] = m;
+    } else {
+      memories.push(m);
+    }
+    memories.sort((a, b) => new Date(b.date) - new Date(a.date));
+    updateStats();
+    renderTimeline();
+    renderGallery();
+  });
+
+  // 🔥 实时事件：删除回忆
+  socket.on('memory-deleted', (data) => {
+    memories = memories.filter(m => m.id !== data.id);
+    updateStats();
+    renderTimeline();
+    renderGallery();
+    showToast('💔 TA 删除了一条回忆');
+  });
+
+  // 🔥 实时事件：纪念日更新
+  socket.on('anniversary-updated', (data) => {
+    document.getElementById('anniversaryInput').value = data.anniversary;
+    updateStats();
+    const card = document.querySelector('.anniversary-card');
+    if (card) {
+      card.style.transform = 'scale(1.03)';
+      setTimeout(() => card.style.transform = '', 300);
+    }
+    showToast('💝 TA 更新了纪念日！');
+  });
+
+  socket.on('disconnect', () => {
+    console.log('🔌 WebSocket 断开');
+    setPartnerOnline(false);
+  });
+}
+
+function setPartnerOnline(online) {
+  partnerOnline = online;
+  const badge = document.getElementById('onlineBadge');
+  const text = document.getElementById('onlineText');
+  if (online) {
+    badge.className = 'online-badge online';
+    text.textContent = 'TA 在线';
+  } else {
+    badge.className = 'online-badge offline';
+    text.textContent = 'TA 离线';
+  }
+}
+
+// ====== 着陆页逻辑 ======
+async function createDiary() {
+  try {
+    showToast('⏳ 正在创建日记...');
+    const resp = await fetch('/api/diaries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: '我们的恋爱点滴' }),
+    });
+    const data = await resp.json();
+    if (data.success) {
+      localStorage.setItem(STORAGE_KEY_DIARY_CODE, data.diary.invite_code);
+      await loadDiary(data.diary.invite_code);
+      showToast('🎉 日记创建成功！快把邀请码发给 TA 吧~');
+    }
+  } catch (e) {
+    showToast('😢 创建失败，请稍后重试');
+  }
+}
+
+async function joinDiary(code) {
+  if (!code) {
+    code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+  }
+  if (!code) {
+    showToast('请输入邀请码哦~ 🔑');
+    return;
+  }
+  try {
+    showToast('⏳ 正在查找日记...');
+    const resp = await fetch(`/api/diaries/${encodeURIComponent(code)}`);
+    const data = await resp.json();
+    if (data.success) {
+      localStorage.setItem(STORAGE_KEY_DIARY_CODE, code);
+      await loadDiary(code);
+      showToast('💕 成功加入日记！');
+    } else {
+      showToast('😢 ' + (data.error || '日记不存在，请检查邀请码~'));
+    }
+  } catch (e) {
+    showToast('😢 连接失败，请检查网络~');
+  }
+}
+
+// ====== 加载日记 ======
+async function loadDiary(code) {
+  try {
+    const resp = await fetch(`/api/diaries/${encodeURIComponent(code)}`);
+    const data = await resp.json();
+    if (!data.success) {
+      showToast('😢 日记加载失败');
+      return;
+    }
+
+    currentDiaryCode = code;
+    memories = data.memories || [];
+
+    // 显示日记界面，隐藏着陆页
+    document.getElementById('landingPage').style.display = 'none';
+    document.getElementById('diaryApp').style.display = 'block';
+    document.getElementById('inviteCodeDisplay').textContent = code;
+
+    // 恢复纪念日
+    if (data.diary.anniversary) {
+      document.getElementById('anniversaryInput').value = data.diary.anniversary;
+    }
+
+    // 恢复昵称
+    const myName = loadMyName();
+    if (myName) {
+      document.getElementById('myNameInput').value = myName;
+    }
+
+    // 连接 WebSocket
+    connectSocket();
+    if (socket && socket.connected) {
+      socket.emit('join-diary', code);
+    }
+
+    // 渲染
+    updateStats();
+    renderTimeline();
+    renderGallery();
+  } catch (e) {
+    showToast('😢 加载日记失败，请检查网络~');
+  }
+}
+
+function leaveDiary() {
+  if (!confirm('确定要退出这本日记吗？你可以随时用邀请码重新加入~')) return;
+
+  if (socket && currentDiaryCode) {
+    socket.emit('leave-diary', currentDiaryCode);
+  }
+
+  localStorage.removeItem(STORAGE_KEY_DIARY_CODE);
+  currentDiaryCode = null;
+  memories = [];
+  currentFilter = 'all';
+
+  document.getElementById('landingPage').style.display = 'flex';
+  document.getElementById('diaryApp').style.display = 'none';
+  document.getElementById('joinCodeInput').value = '';
+  setPartnerOnline(false);
+}
+
+// ====== 邀请码操作 ======
+function copyInviteCode() {
+  if (!currentDiaryCode) return;
+  navigator.clipboard.writeText(currentDiaryCode).then(() => {
+    showToast('📋 邀请码已复制：' + currentDiaryCode);
+  }).catch(() => {
+    prompt('复制这个邀请码发给 TA：', currentDiaryCode);
+  });
+}
+
+function copyInviteLink() {
+  const link = window.location.origin + '?join=' + currentDiaryCode;
+  navigator.clipboard.writeText(link).then(() => {
+    showToast('🔗 邀请链接已复制！发给 TA 吧~');
+  }).catch(() => {
+    prompt('复制这个链接发给 TA：', link);
+  });
+}
+
+// ====== 昵称管理 ======
+function saveMyName() {
+  const name = document.getElementById('myNameInput').value.trim();
+  if (!name) { showToast('请输入你的昵称哦~ 💕'); return; }
+  saveMyNameToStore(name);
+  showToast(`你好呀，${name}！💕`);
+  renderTimeline();
+}
+
+// ====== 导出数据 ======
+function exportData() {
+  const data = {
+    version: 2,
+    inviteCode: currentDiaryCode,
+    anniversary: document.getElementById('anniversaryInput').value,
+    myName: loadMyName(),
+    memories: memories,
+    exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  a.href = url;
+  a.download = `我们的恋爱点滴_${dateStr}.love`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('📥 数据已导出！把文件发给 TA 吧~');
+}
+
+// ====== 导入数据 ======
+async function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.memories || !Array.isArray(data.memories)) {
+        throw new Error('无效的数据格式');
+      }
+
+      // 合并纪念日
+      if (!document.getElementById('anniversaryInput').value && data.anniversary) {
+        await updateAnniversaryOnServer(data.anniversary);
+        document.getElementById('anniversaryInput').value = data.anniversary;
+      }
+
+      // 逐条添加新记忆
+      const existingIds = new Set(memories.map(m => m.id));
+      const newMemories = data.memories.filter(m => !existingIds.has(m.id));
+      let added = 0;
+
+      for (const m of newMemories) {
+        try {
+          await fetch(`/api/diaries/${encodeURIComponent(currentDiaryCode)}/memories`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              date: m.date, tag: m.tag, title: m.title,
+              description: m.desc || m.description || '',
+              author: m.author || loadMyName() || '匿名小可爱',
+              photos: m.photos || [],
+            }),
+          });
+          added++;
+        } catch (err) { /* skip failed */ }
+      }
+
+      if (added === 0) {
+        showToast('📤 没有新的回忆需要导入，都已经存在啦~');
+      } else {
+        showToast(`📤 成功导入了 ${added} 条新回忆！💕`);
+      }
+    } catch (err) {
+      showToast('😢 文件格式不正确，请检查文件~');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ====== 生成分享网页 ======
+function generateShareHtml() {
+  const data = {
+    version: 2,
+    inviteCode: currentDiaryCode,
+    anniversary: document.getElementById('anniversaryInput').value,
+    myName: loadMyName(),
+    memories: memories,
+  };
+  const dataJson = JSON.stringify(data);
+
+  // 简化：嵌入数据到独立 HTML
+  const shareHtml = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💕 我们的恋爱点滴 - 分享版</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:linear-gradient(135deg,#fff5f8,#ffe8f0,#fff0f5,#ffe8ee);min-height:100vh;color:#4a3040;padding:20px}
+  .header{text-align:center;padding:40px 20px 20px}
+  .header h1{font-size:2em;background:linear-gradient(135deg,#e8536c,#ff6b9d);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .card{background:white;border-radius:20px;padding:20px;margin:16px auto;max-width:600px;box-shadow:0 4px 20px rgba(255,107,157,0.1)}
+  .tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.75em;font-weight:600;color:white;margin-bottom:8px}
+  .tag-纪念日{background:linear-gradient(135deg,#f09819,#ff512f)} .tag-旅行{background:linear-gradient(135deg,#4facfe,#00f2fe)} .tag-美食{background:linear-gradient(135deg,#fa709a,#fee140)} .tag-日常{background:linear-gradient(135deg,#a18cd1,#fbc2eb)} .tag-惊喜{background:linear-gradient(135deg,#f5576c,#ff6b9d)} .tag-电影{background:linear-gradient(135deg,#667eea,#764ba2)} .tag-礼物{background:linear-gradient(135deg,#f093fb,#f5576c)} .tag-其他{background:linear-gradient(135deg,#c1dfc4,#deecdd);color:#5a7a5a}
+  .date{font-size:0.85em;color:#ff6b9d;font-weight:600;margin-bottom:4px}
+  .title{font-size:1.1em;font-weight:700;margin-bottom:4px}
+  .desc{font-size:0.9em;color:#7a6070;line-height:1.6;white-space:pre-wrap}
+  .author{font-size:0.75em;color:#ff6b9d;opacity:0.7}
+  .photos{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .photos img{width:90px;height:90px;object-fit:cover;border-radius:12px;cursor:pointer}
+  .footer{text-align:center;padding:40px 20px;color:#7a6070}
+  .heart{animation:heartbeat 1.2s infinite}
+  @keyframes heartbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+</style>
+</head>
+<body>
+<div class="header"><h1>💕 我们的恋爱点滴</h1></div>
+<div id="content"></div>
+<div class="footer"><p>用 <span class="heart">❤️</span> 记录我们的每一天</p></div>
+<script>
+  const DATA = ${dataJson};
+  document.getElementById('content').innerHTML = DATA.memories.map(m => '<div class="card"><span class="tag tag-' + m.tag + '">' + m.tag + '</span><div class="author">✍️ ' + (m.author||'匿名小可爱') + '</div><div class="date">📅 ' + m.date + '</div><div class="title">' + m.title + '</div>' + (m.desc||m.description ? '<div class="desc">' + (m.desc||m.description) + '</div>':'') + ((m.photos||[]).length ? '<div class="photos">' + m.photos.map(p => '<img src="' + p + '" onclick="window.open(this.src)">').join('') + '</div>':'') + '</div>').join('');
+<\/script>
+</body></html>`;
+
+  const blob = new Blob([shareHtml], { type: 'text/html;charset=UTF-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  a.href = url;
+  a.download = `我们的恋爱点滴_分享版_${dateStr}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('🔗 分享网页已生成！发给 TA 直接打开就行~');
+}
+
+// ====== 纪念日 ======
+async function updateAnniversaryOnServer(anniversary) {
+  try {
+    await fetch(`/api/diaries/${encodeURIComponent(currentDiaryCode)}/anniversary`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ anniversary }),
+    });
+  } catch (e) {
+    console.error('更新纪念日失败:', e);
+  }
+}
+
+async function setAnniversary() {
+  const val = document.getElementById('anniversaryInput').value;
+  if (!val) { showToast('请选择一个日期哦~ 💕'); return; }
+  await updateAnniversaryOnServer(val);
+  updateStats();
+  const card = document.querySelector('.anniversary-card');
+  card.style.transform = 'scale(1.03)';
+  setTimeout(() => card.style.transform = '', 300);
+  showToast('💝 纪念日已保存！');
+}
+
+function getDaysTogether() {
+  const anni = document.getElementById('anniversaryInput').value;
+  if (!anni) return null;
+  const start = new Date(anni + 'T00:00:00');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.floor((today - start) / (1000 * 60 * 60 * 24));
+}
+
+function updateStats() {
+  const days = getDaysTogether();
+  document.getElementById('daysTogether').textContent = days !== null ? days : '--';
+  document.getElementById('memoryCount').textContent = memories.length;
+  const photoCount = memories.reduce((sum, m) => sum + (m.photos ? m.photos.length : 0), 0);
+  document.getElementById('photoCount').textContent = photoCount;
+}
+
+// ====== 表单 ======
+function toggleForm() {
+  const form = document.getElementById('addMemoryForm');
+  const btn = document.getElementById('toggleFormBtn');
+  form.classList.toggle('show');
+  if (form.classList.contains('show')) {
+    btn.textContent = '🙈 先不写了';
+    document.getElementById('memDate').value = new Date().toISOString().split('T')[0];
+  } else {
+    btn.textContent = '💌 记录新的甜蜜时刻';
+    clearForm();
+  }
+}
+
+function clearForm() {
+  document.getElementById('memDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('memTag').value = '日常';
+  document.getElementById('memTitle').value = '';
+  document.getElementById('memDesc').value = '';
+  document.getElementById('memPhotos').value = '';
+  document.getElementById('imagePreview').innerHTML = '';
+  pendingImages = [];
+}
+
+async function previewImages() {
+  const files = document.getElementById('memPhotos').files;
+  pendingImages = [];
+  const preview = document.getElementById('imagePreview');
+  preview.innerHTML = '';
+  for (const f of files) {
+    const dataUrl = await compressImage(f);
+    pendingImages.push(dataUrl);
+    const img = document.createElement('img');
+    img.src = dataUrl;
+    preview.appendChild(img);
+  }
+}
+
+async function addMemory() {
+  const date = document.getElementById('memDate').value;
+  const tag = document.getElementById('memTag').value;
+  const title = document.getElementById('memTitle').value.trim();
+  const desc = document.getElementById('memDesc').value.trim();
+  const author = loadMyName() || '匿名小可爱';
+
+  if (!date) { showToast('请选择日期哦~ 📅'); return; }
+  if (!title) { showToast('给回忆取个标题吧~ 💬'); return; }
+
+  const files = document.getElementById('memPhotos').files;
+  if (files.length > 0 && pendingImages.length === 0) {
+    for (const f of files) {
+      pendingImages.push(await compressImage(f));
+    }
+  }
+
+  try {
+    const resp = await fetch(`/api/diaries/${encodeURIComponent(currentDiaryCode)}/memories`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        date, tag, title,
+        description: desc,
+        author,
+        photos: pendingImages,
+      }),
+    });
+    const data = await resp.json();
+    if (data.success) {
+      // Socket.IO 会广播 memory-added 事件，我们监听它来更新 UI
+      // 但我们也立即本地更新，避免等待
+      if (!memories.find(m => m.id === data.memory.id)) {
+        memories.push(data.memory);
+        memories.sort((a, b) => new Date(b.date) - new Date(a.date));
+      }
+      clearForm();
+      toggleForm();
+      updateStats();
+      renderTimeline();
+      renderGallery();
+      showToast(`💌 「${title}」已保存！`);
+    } else {
+      showToast('😢 保存失败，请重试~');
+    }
+  } catch (e) {
+    showToast('😢 网络错误，请检查连接~');
+  }
+}
+
+async function deleteMemory(id) {
+  if (!confirm('确定要删除这段回忆吗？💔')) return;
+  try {
+    await fetch(`/api/diaries/${encodeURIComponent(currentDiaryCode)}/memories/${id}`, {
+      method: 'DELETE',
+    });
+    memories = memories.filter(m => m.id !== id);
+    updateStats();
+    renderTimeline();
+    renderGallery();
+    showToast('回忆已删除 💔');
+  } catch (e) {
+    showToast('😢 删除失败，请重试~');
+  }
+}
+
+// ====== 渲染 ======
+function filterMemories(tag) {
+  currentFilter = tag;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  renderTimeline();
+}
+
+function getFilteredMemories() {
+  if (currentFilter === 'all') return memories;
+  return memories.filter(m => m.tag === currentFilter);
+}
+
+function renderTimeline() {
+  const container = document.getElementById('timeline');
+  const empty = document.getElementById('emptyState');
+  const filtered = getFilteredMemories();
+
+  container.querySelectorAll('.timeline-item').forEach(el => el.remove());
+
+  if (filtered.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  filtered.forEach((m) => {
+    const item = document.createElement('div');
+    item.className = 'timeline-item';
+    item.setAttribute('data-id', m.id);
+
+    const tagClass = 'tag-' + m.tag;
+    const authorName = m.author || '匿名小可爱';
+    const photos = (m.photos && Array.isArray(m.photos)) ? m.photos : [];
+    const photosHtml = photos.length > 0
+      ? `<div class="photos">${photos.map((p, i) =>
+          `<img src="${p}" alt="照片${i + 1}" onclick="event.stopPropagation();showImage('${p.replace(/'/g, "\\'")}')" loading="lazy">`
+        ).join('')}</div>`
+      : '';
+
+    item.innerHTML = `
+      <div class="timeline-dot"></div>
+      <div class="memory-card-wrapper">
+        <div class="memory-card">
+          <span class="tag ${tagClass}">${getTagEmoji(m.tag)} ${m.tag}</span>
+          <div class="author-badge">✍️ ${escapeHtml(authorName)}</div>
+          <div class="date">📅 ${m.date}</div>
+          <div class="title">${escapeHtml(m.title)}</div>
+          ${m.description || m.desc ? `<div class="desc">${escapeHtml(m.description || m.desc)}</div>` : ''}
+          ${photosHtml}
+          <div class="card-actions">
+            <button class="btn btn-danger btn-sm" onclick="deleteMemory(${m.id})">🗑️ 删除</button>
+          </div>
+        </div>
+      </div>
+    `;
+    container.appendChild(item);
+  });
+}
+
+function getTagEmoji(tag) {
+  const map = { '纪念日': '💝', '旅行': '✈️', '美食': '🍽️', '日常': '🌤️', '惊喜': '🎉', '电影': '🎬', '礼物': '🎁', '其他': '📌' };
+  return map[tag] || '📌';
+}
+
+function renderGallery() {
+  const section = document.getElementById('gallerySection');
+  const grid = document.getElementById('galleryGrid');
+  const allPhotos = memories.flatMap(m => {
+    const photos = (m.photos && Array.isArray(m.photos)) ? m.photos : [];
+    return photos.map(p => ({ src: p, date: m.date, title: m.title, author: m.author }));
+  });
+  if (allPhotos.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+  grid.innerHTML = allPhotos.map(p =>
+    `<img src="${p.src}" alt="${p.title}" title="${p.date} · ${p.author || ''} — ${p.title}" onclick="showImage('${p.src.replace(/'/g, "\\'")}')" loading="lazy">`
+  ).join('');
+}
+
+// ====== 图片模态框 ======
+function showImage(src) {
+  document.getElementById('modalImage').src = src;
+  document.getElementById('imageModal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('imageModal').classList.remove('show');
+}
+
+// ====== 工具 ======
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ====== 键盘事件 ======
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+  // 回车提交邀请码
+  if (e.key === 'Enter' && document.activeElement === document.getElementById('joinCodeInput')) {
+    joinDiary();
+  }
+});
+
+// ====== 浮动粒子 ======
+function createParticles() {
+  const container = document.getElementById('particles');
+  const emojis = ['💕', '💖', '💗', '💝', '✨', '🌸', '💐', '🦋', '💫', '💌', '🕊️', '🌷', '💎', '🌟'];
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('span');
+    p.className = 'particle';
+    p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (Math.random() * 10 + 12) + 's';
+    p.style.animationDelay = (Math.random() * 12) + 's';
+    p.style.fontSize = (Math.random() * 16 + 16) + 'px';
+    container.appendChild(p);
+  }
+}
+
+// ====== 初始化 ======
+function init() {
+  createParticles();
+
+  // 检查 URL 中的邀请码参数
+  const urlParams = new URLSearchParams(window.location.search);
+  const joinCode = urlParams.get('join');
+  if (joinCode) {
+    document.getElementById('joinCodeInput').value = joinCode.toUpperCase();
+  }
+
+  // 检查是否有上次保存的日记
+  const savedCode = localStorage.getItem(STORAGE_KEY_DIARY_CODE);
+  if (savedCode) {
+    loadDiary(savedCode);
+  }
+
+  // 如果有 join 参数且没有已保存的日记，自动加入
+  if (joinCode && !savedCode) {
+    joinDiary(joinCode.toUpperCase());
+  }
+}
+
+init();
+</script>
+</body>
+</html>
