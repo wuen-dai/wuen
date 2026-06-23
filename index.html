@@ -820,6 +820,130 @@
     .stat-card .number { font-size: 1.5em; }
     .landing-card { padding: 30px 24px; }
     .join-row { flex-direction: column; }
+    .message-board-section { max-width: 700px; margin: 0 auto 30px; padding: 0 20px; }
+  }
+
+  /* ===== 留言板 ===== */
+  .message-board-section {
+    position: relative;
+    z-index: 1;
+  }
+  .message-board-section h2 {
+    text-align: center;
+    font-size: 1.3em;
+    margin-bottom: 20px;
+    color: var(--text);
+    letter-spacing: 2px;
+  }
+  .message-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 15px;
+    background: var(--pink-lighter);
+    border-radius: 20px;
+    margin-bottom: 15px;
+  }
+  .message-list::-webkit-scrollbar { width: 5px; }
+  .message-list::-webkit-scrollbar-thumb {
+    background: var(--pink-light);
+    border-radius: 10px;
+  }
+  .msg-bubble {
+    max-width: 75%;
+    padding: 10px 16px;
+    border-radius: 18px;
+    font-size: 0.92em;
+    line-height: 1.6;
+    position: relative;
+    word-break: break-word;
+    animation: msgIn 0.3s ease;
+  }
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .msg-bubble.mine {
+    align-self: flex-end;
+    background: linear-gradient(135deg, var(--rose), var(--pink));
+    color: white;
+    border-bottom-right-radius: 6px;
+  }
+  .msg-bubble.theirs {
+    align-self: flex-start;
+    background: white;
+    color: var(--text);
+    border-bottom-left-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .msg-author {
+    font-size: 0.75em;
+    font-weight: 700;
+    margin-bottom: 3px;
+    opacity: 0.85;
+  }
+  .msg-content { white-space: pre-wrap; }
+  .msg-time {
+    font-size: 0.65em;
+    opacity: 0.55;
+    margin-top: 4px;
+    text-align: right;
+  }
+  .msg-delete {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.7em;
+    opacity: 0;
+    transition: opacity 0.2s;
+    padding: 0;
+  }
+  .msg-bubble:hover .msg-delete { opacity: 0.7; }
+  .msg-bubble.mine .msg-delete { color: rgba(255,255,255,0.8); }
+  .msg-bubble.theirs .msg-delete { color: var(--text-light); }
+  .msg-input-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .msg-input-row textarea {
+    flex: 1;
+    padding: 10px 16px;
+    border: 2px solid var(--pink-light);
+    border-radius: 20px;
+    font-size: 0.95em;
+    font-family: inherit;
+    color: var(--text);
+    outline: none;
+    resize: none;
+    min-height: 40px;
+    max-height: 100px;
+    transition: border-color 0.3s;
+  }
+  .msg-input-row textarea:focus { border-color: var(--pink); }
+  .msg-send-btn {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, var(--rose), var(--pink));
+    color: white;
+    font-size: 1.2em;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 3px 12px rgba(255,107,157,0.25);
+  }
+  .msg-send-btn:hover { transform: scale(1.08); }
+  .msg-empty {
+    text-align: center;
+    color: var(--text-light);
+    font-size: 0.9em;
+    padding: 20px;
   }
 </style>
 </head>
@@ -996,6 +1120,18 @@
 </div>
 
 <!-- 图片大图模态框 -->
+<!-- 留言板 -->
+<div class="message-board-section">
+  <h2>💬 我们的留言板</h2>
+  <div class="message-list" id="messageList">
+    <div class="msg-empty" id="msgEmpty">💭 还没有留言，来说点什么吧~</div>
+  </div>
+  <div class="msg-input-row">
+    <textarea id="msgContent" placeholder="写下你想对 TA 说的话..." rows="1" maxlength="500"></textarea>
+    <button class="msg-send-btn" onclick="sendMessage()" title="发送">✈</button>
+  </div>
+</div>
+
 <div class="modal" id="imageModal" onclick="closeModal()">
   <img id="modalImage" src="" alt="照片">
 </div>
@@ -1020,6 +1156,7 @@ let currentFilter = 'all';
 let pendingImages = [];
 let socket = null;
 let partnerOnline = false;
+let messages = [];
 const USER_ID = getOrCreateUserId();
 
 // ====== 用户身份 ======
@@ -1155,6 +1292,21 @@ function connectSocket() {
     showToast('💝 TA 更新了纪念日！');
   });
 
+  // 🔥 实时事件：新留言
+  socket.on('message-added', (data) => {
+    if (!messages.find(m => m.id === data.message.id)) {
+      messages.push(data.message);
+      renderMessages();
+      showToast('💬 有新留言！');
+    }
+  });
+
+  // 🔥 实时事件：删除留言
+  socket.on('message-deleted', (data) => {
+    messages = messages.filter(m => m.id !== data.id);
+    renderMessages();
+  });
+
   socket.on('disconnect', () => {
     console.log('🔌 WebSocket 断开');
     setPartnerOnline(false);
@@ -1246,6 +1398,7 @@ async function loadDiary(code) {
 
     currentDiaryCode = code;
     memories = data.memories || [];
+    messages = data.messages || [];
 
     // 显示日记界面，隐藏着陆页
     document.getElementById('landingPage').style.display = 'none';
@@ -1280,6 +1433,7 @@ async function loadDiary(code) {
     updateStats();
     renderTimeline();
     renderGallery();
+    renderMessages();
     console.log('✅ 日记加载成功:', code);
   } catch (e) {
     console.error('加载日记异常:', e);
@@ -1297,6 +1451,7 @@ function leaveDiary() {
   localStorage.removeItem(STORAGE_KEY_DIARY_CODE);
   currentDiaryCode = null;
   memories = [];
+  messages = [];
   currentFilter = 'all';
 
   document.getElementById('landingPage').style.display = 'flex';
@@ -1693,6 +1848,91 @@ function renderGallery() {
   ).join('');
 }
 
+// ====== 留言板 ======
+function renderMessages() {
+  const list = document.getElementById('messageList');
+  const empty = document.getElementById('msgEmpty');
+
+  // 移除旧的气泡（保留 empty 提示）
+  list.querySelectorAll('.msg-bubble').forEach(el => el.remove());
+
+  if (messages.length === 0) {
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+  }
+
+  const myName = loadMyName();
+  messages.forEach(msg => {
+    const bubble = document.createElement('div');
+    const isMine = msg.author === myName;
+    bubble.className = 'msg-bubble ' + (isMine ? 'mine' : 'theirs');
+    bubble.setAttribute('data-id', msg.id);
+
+    const time = new Date(msg.created_at);
+    const timeStr = time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    const dateStr = time.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
+
+    bubble.innerHTML = `
+      <div class="msg-author">${escapeHtml(msg.author || '匿名小可爱')}</div>
+      <div class="msg-content">${escapeHtml(msg.content)}</div>
+      <div class="msg-time">${dateStr} ${timeStr}
+        ${isMine ? `<button class="msg-delete" onclick="event.stopPropagation();deleteMyMessage(${msg.id})" title="删除">✕</button>` : ''}
+      </div>
+    `;
+    list.appendChild(bubble);
+  });
+
+  // 滚动到底部
+  list.scrollTop = list.scrollHeight;
+}
+
+async function sendMessage() {
+  const textarea = document.getElementById('msgContent');
+  const content = textarea.value.trim();
+  if (!content) return;
+
+  const author = loadMyName() || '匿名小可爱';
+  const btn = document.querySelector('.msg-send-btn');
+  btn.disabled = true;
+
+  try {
+    const resp = await fetch(`/api/diaries/${encodeURIComponent(currentDiaryCode)}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ author, content }),
+    });
+    const data = await resp.json();
+    if (data.success) {
+      if (!messages.find(m => m.id === data.message.id)) {
+        messages.push(data.message);
+      }
+      textarea.value = '';
+      textarea.style.height = 'auto';
+      renderMessages();
+    } else {
+      showToast('😢 ' + (data.error || '发送失败'));
+    }
+  } catch (e) {
+    showToast('😢 网络错误，请重试~');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function deleteMyMessage(id) {
+  if (!confirm('确定要删除这条留言吗？')) return;
+  try {
+    await fetch(`/api/diaries/${encodeURIComponent(currentDiaryCode)}/messages/${id}`, {
+      method: 'DELETE',
+    });
+    messages = messages.filter(m => m.id !== id);
+    renderMessages();
+  } catch (e) {
+    showToast('😢 删除失败，请重试~');
+  }
+}
+
 // ====== 图片模态框 ======
 function showImage(src) {
   document.getElementById('modalImage').src = src;
@@ -1717,6 +1957,11 @@ document.addEventListener('keydown', (e) => {
   // 回车提交邀请码
   if (e.key === 'Enter' && document.activeElement === document.getElementById('joinCodeInput')) {
     joinDiary();
+  }
+  // 回车发送留言（Shift+Enter 换行）
+  if (e.key === 'Enter' && !e.shiftKey && document.activeElement === document.getElementById('msgContent')) {
+    e.preventDefault();
+    sendMessage();
   }
 });
 

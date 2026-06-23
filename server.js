@@ -53,7 +53,8 @@ app.get('/api/diaries/:code', async (req, res) => {
       return res.status(404).json({ error: '日记不存在，请检查邀请码~' });
     }
     const memories = await db.getMemoriesByCode(code);
-    res.json({ success: true, diary, memories });
+    const messages = await db.getMessagesByCode(code);
+    res.json({ success: true, diary, memories, messages });
   } catch (e) {
     console.error('获取日记失败:', e.message);
     res.status(500).json({ error: '获取失败' });
@@ -139,6 +140,64 @@ app.delete('/api/diaries/:code/memories/:id', async (req, res) => {
     res.json({ success: true });
   } catch (e) {
     console.error('删除回忆失败:', e.message);
+    res.status(500).json({ error: '删除失败' });
+  }
+});
+
+// 获取留言
+app.get('/api/diaries/:code/messages', async (req, res) => {
+  try {
+    const { code } = req.params;
+    const messages = await db.getMessagesByCode(code);
+    res.json({ success: true, messages });
+  } catch (e) {
+    console.error('获取留言失败:', e.message);
+    res.status(500).json({ error: '获取失败' });
+  }
+});
+
+// 添加留言
+app.post('/api/diaries/:code/messages', async (req, res) => {
+  try {
+    const { code } = req.params;
+    const { author, content } = req.body;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: '留言内容不能为空' });
+    }
+
+    const message = await db.addMessage(code, { author, content: content.trim() });
+    if (!message) {
+      return res.status(404).json({ error: '日记不存在' });
+    }
+
+    io.to(code).emit('message-added', { message });
+    console.log(`💬 [${code}] 新留言 by ${author || '?'}`);
+
+    res.json({ success: true, message });
+  } catch (e) {
+    console.error('添加留言失败:', e.message);
+    res.status(500).json({ error: '添加失败' });
+  }
+});
+
+// 删除留言
+app.delete('/api/diaries/:code/messages/:id', async (req, res) => {
+  try {
+    const { code } = req.params;
+    const messageId = parseInt(req.params.id);
+
+    const ok = await db.deleteMessage(code, messageId);
+    if (!ok) {
+      return res.status(404).json({ error: '日记不存在' });
+    }
+
+    io.to(code).emit('message-deleted', { id: messageId });
+    console.log(`💬 [${code}] 删除留言 #${messageId}`);
+
+    res.json({ success: true });
+  } catch (e) {
+    console.error('删除留言失败:', e.message);
     res.status(500).json({ error: '删除失败' });
   }
 });

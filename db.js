@@ -48,6 +48,14 @@ async function initDB() {
           created_at TIMESTAMP DEFAULT NOW()
         );
         CREATE INDEX IF NOT EXISTS idx_memories_diary ON memories(diary_id);
+        CREATE TABLE IF NOT EXISTS messages (
+          id SERIAL PRIMARY KEY,
+          diary_id INTEGER REFERENCES diaries(id) ON DELETE CASCADE,
+          author VARCHAR(50) DEFAULT '匿名小可爱',
+          content TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_messages_diary ON messages(diary_id);
       `);
       console.log('✅ 数据库: PostgreSQL');
     } finally {
@@ -69,16 +77,18 @@ async function initDB() {
               anniversary: raw.anniversary || null,
               created_at: new Date().toISOString(),
               memories: raw.memories || [],
+              messages: [],
             },
           },
           diarySeq: 1,
           memorySeq: (raw.memories || []).length,
+          messageSeq: 0,
         };
         fs.writeFileSync(DATA_FILE, JSON.stringify(migrated, null, 2), 'utf-8');
         console.log('✅ 数据迁移完成！邀请码: LEGACY-01');
       }
     } else {
-      fs.writeFileSync(DATA_FILE, JSON.stringify({ diaries: {}, diarySeq: 0, memorySeq: 0 }), 'utf-8');
+      fs.writeFileSync(DATA_FILE, JSON.stringify({ diaries: {}, diarySeq: 0, memorySeq: 0, messageSeq: 0 }), 'utf-8');
     }
     console.log('✅ 数据库: JSON 文件模式 (本地开发)');
     console.log(`   📂 ${DATA_FILE}`);
@@ -140,6 +150,7 @@ async function createDiary(title) {
       anniversary: null,
       created_at: new Date().toISOString(),
       memories: [],
+      messages: [],
     };
     store.diaries[code] = diary;
     writeStore(store);
@@ -265,4 +276,69 @@ async function deleteMemory(code, memoryId) {
   }
 }
 
-module.exports = { initDB, createDiary, getDiaryByCode, updateAnniversary, getMemoriesByCode, addMemory, updateMemory, deleteMemory };
+// ===== 留言操作 =====
+
+async function getMessagesByCode(code) {
+  if (USE_POSTGRES) {
+    const diary = await getDiaryByCode(code);
+    if (!diary) return [];
+    const result = await pool.query(
+      'SELECT * FROM messages WHERE diary_id = $1 ORDER BY created_at ASC',
+      [diary.id]
+    );
+    return result.rows;
+  } else {
+    const store = readStore();
+    const diary = store.diaries[code];
+    if (!diary) return [];
+    return [...(diary.messages || [])].sort((a, b) =>
+      new Date(a.created_at) - new Date(b.created_at)
+    );
+  }
+}
+
+async function addMessage(code, { author, content }) {
+  if (USE_POSTGRES) {
+    const diary = await getDiaryByCode(code);
+    if (!diary) return null;
+    const result = await pool.query(
+      'INSERT INTO messages (diary_id, author, content) VALUES ($1, $2, $3) RETURNING *',
+      [diary.id, author || '匿名小可爱', content]
+    );
+    return result.rows[0];
+  } else {
+    const store = readStore();
+    const diary = store.diaries[code];
+    if (!diary) return null;
+    if (!diary.messages) diary.messages = [];
+    store.messageSeq = (store.messageSeq || 0) + 1;
+    const message = {
+      id: store.messageSeq,
+      author: author || '匿名小可爱',
+      content,
+      created_at: new Date().toISOString(),
+    };
+    diary.messages.push(message);
+    writeStore(store);
+    return message;
+  }
+}
+
+async function deleteMessage(code, messageId) {
+  if (USE_POSTGRES) {
+    const diary = await getDiaryByCode(code);
+    if (!diary) return false;
+    await pool.query('DELETE FROM messages WHERE id=$1 AND diary_id=$2', [messageId, diary.id]);
+    return true;
+  } else {
+    const store = readStore();
+    const diary = store.diaries[code];
+    if (!diary) return false;
+    if (!diary.messages) return false;
+    diary.messages = diary.messages.filter(m => m.id !== messageId);
+    writeStore(store);
+    return true;
+  }
+}
+
+module.exports = { initDB, createDiary, getDiaryByCode, updateAnniversary, getMemoriesByCode, addMemory, updateMemory, deleteMemory, getMessagesByCode, addMessage, deleteMessage };
