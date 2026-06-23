@@ -9,6 +9,7 @@
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
+const fs = require('fs');
 const { Server } = require('socket.io');
 const path = require('path');
 const db = require('./db');
@@ -251,6 +252,19 @@ io.on('connection', (socket) => {
 async function start() {
   try {
     await db.initDB();
+
+    // 自动种子数据：如果数据库为空且有 seed.json，自动恢复
+    const seedPath = path.join(__dirname, 'seed.json');
+    if (fs.existsSync(seedPath)) {
+      try {
+        const seed = JSON.parse(fs.readFileSync(seedPath, 'utf-8'));
+        const existing = await db.getDiaryByCode(seed.inviteCode);
+        if (!existing) {
+          await db.restoreDiary(seed.inviteCode, seed.diary);
+          console.log(`🌱 已自动恢复日记: ${seed.inviteCode}`);
+        }
+      } catch (e) { console.warn('⚠️ 种子数据恢复失败:', e.message); }
+    }
     server.listen(PORT, '0.0.0.0', () => {
       console.log('');
       console.log('💕 ====================================');
