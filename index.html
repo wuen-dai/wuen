@@ -1011,6 +1011,9 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
 // ====== 全局状态 ======
+const STORAGE_KEY_USER_ID = 'love_diary_user_id';
+const STORAGE_KEY_MY_NAME = 'love_diary_my_name';
+const STORAGE_KEY_DIARY_CODE = 'love_diary_current_code';
 let currentDiaryCode = null;
 let memories = [];
 let currentFilter = 'all';
@@ -1018,9 +1021,6 @@ let pendingImages = [];
 let socket = null;
 let partnerOnline = false;
 const USER_ID = getOrCreateUserId();
-const STORAGE_KEY_USER_ID = 'love_diary_user_id';
-const STORAGE_KEY_MY_NAME = 'love_diary_my_name';
-const STORAGE_KEY_DIARY_CODE = 'love_diary_current_code';
 
 // ====== 用户身份 ======
 function getOrCreateUserId() {
@@ -1075,6 +1075,10 @@ function compressImage(file, maxW = 800, quality = 0.7) {
 // ====== Socket.IO 连接 ======
 function connectSocket() {
   if (socket && socket.connected) return;
+  if (typeof io === 'undefined') {
+    console.warn('Socket.IO 客户端未加载，实时同步不可用');
+    return;
+  }
 
   socket = io({ transports: ['websocket', 'polling'] });
 
@@ -1171,22 +1175,32 @@ function setPartnerOnline(online) {
 }
 
 // ====== 着陆页逻辑 ======
+let creatingDiary = false;
+
 async function createDiary() {
+  if (creatingDiary) return; // 防重复点击
+  creatingDiary = true;
   try {
     showToast('⏳ 正在创建日记...');
     const resp = await fetch('/api/diaries', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
       body: JSON.stringify({ title: '我们的恋爱点滴' }),
     });
     const data = await resp.json();
-    if (data.success) {
+    if (data.success && data.diary) {
       localStorage.setItem(STORAGE_KEY_DIARY_CODE, data.diary.invite_code);
       await loadDiary(data.diary.invite_code);
       showToast('🎉 日记创建成功！快把邀请码发给 TA 吧~');
+    } else {
+      console.error('创建日记失败:', data);
+      showToast('😢 创建失败: ' + (data.error || '未知错误'));
     }
   } catch (e) {
-    showToast('😢 创建失败，请稍后重试');
+    console.error('创建日记异常:', e);
+    showToast('😢 创建失败: ' + (e.message || '请检查服务器是否启动'));
+  } finally {
+    creatingDiary = false;
   }
 }
 
@@ -1218,9 +1232,15 @@ async function joinDiary(code) {
 async function loadDiary(code) {
   try {
     const resp = await fetch(`/api/diaries/${encodeURIComponent(code)}`);
+    if (!resp.ok) {
+      console.error('加载日记 HTTP错误:', resp.status);
+      showToast('😢 日记加载失败 (HTTP ' + resp.status + ')');
+      return;
+    }
     const data = await resp.json();
     if (!data.success) {
-      showToast('😢 日记加载失败');
+      console.error('加载日记失败:', data.error);
+      showToast('😢 ' + (data.error || '日记加载失败'));
       return;
     }
 
@@ -1233,7 +1253,7 @@ async function loadDiary(code) {
     document.getElementById('inviteCodeDisplay').textContent = code;
 
     // 恢复纪念日
-    if (data.diary.anniversary) {
+    if (data.diary && data.diary.anniversary) {
       document.getElementById('anniversaryInput').value = data.diary.anniversary;
     }
 
@@ -1247,14 +1267,23 @@ async function loadDiary(code) {
     connectSocket();
     if (socket && socket.connected) {
       socket.emit('join-diary', code);
+    } else if (socket) {
+      // Socket 存在但未连接，等 connect 事件自动 join
+      socket.once('connect', () => {
+        if (currentDiaryCode === code) {
+          socket.emit('join-diary', code);
+        }
+      });
     }
 
     // 渲染
     updateStats();
     renderTimeline();
     renderGallery();
+    console.log('✅ 日记加载成功:', code);
   } catch (e) {
-    showToast('😢 加载日记失败，请检查网络~');
+    console.error('加载日记异常:', e);
+    showToast('😢 加载日记失败: ' + (e.message || '未知错误'));
   }
 }
 
