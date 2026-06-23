@@ -262,6 +262,22 @@ async function start() {
         if (!existing) {
           await db.restoreDiary(seed.inviteCode, seed.diary);
           console.log(`🌱 已自动恢复日记: ${seed.inviteCode}`);
+        } else {
+          // 已有日记，补充缺失的回忆和留言
+          const mems = await db.getMemoriesByCode(seed.inviteCode);
+          const msgs = await db.getMessagesByCode(seed.inviteCode);
+          if (mems.length === 0 && (seed.diary.memories || []).length > 0) {
+            for (const m of seed.diary.memories) {
+              await db.addMemory(seed.inviteCode, { date: m.date, tag: m.tag, title: m.title, description: m.description || m.desc || '', author: m.author || '匿名小可爱', photos: m.photos || [] });
+            }
+            console.log(`🌱 已补充恢复 ${seed.diary.memories.length} 条回忆`);
+          }
+          if (msgs.length === 0 && (seed.diary.messages || []).length > 0) {
+            for (const m of seed.diary.messages) {
+              await db.addMessage(seed.inviteCode, { author: m.author || '匿名小可爱', content: m.content });
+            }
+            console.log(`🌱 已补充恢复 ${seed.diary.messages.length} 条留言`);
+          }
         }
       } catch (e) { console.warn('⚠️ 种子数据恢复失败:', e.message); }
     }
