@@ -61,6 +61,22 @@ app.get('/api/diaries/:code', async (req, res) => {
   }
 });
 
+// 恢复日记（迁移数据用）
+app.post('/api/diaries/restore', async (req, res) => {
+  try {
+    const { inviteCode, diary } = req.body;
+    if (!inviteCode || !diary) {
+      return res.status(400).json({ error: '缺少参数' });
+    }
+    const result = await db.restoreDiary(inviteCode, diary);
+    if (result.error) return res.status(409).json({ error: result.error });
+    res.json({ success: true, diary: result });
+  } catch (e) {
+    console.error('恢复日记失败:', e.message);
+    res.status(500).json({ error: '恢复失败' });
+  }
+});
+
 // 更新纪念日
 app.put('/api/diaries/:code/anniversary', async (req, res) => {
   try {

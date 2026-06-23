@@ -158,6 +158,54 @@ async function createDiary(title) {
   }
 }
 
+async function restoreDiary(inviteCode, { title, anniversary, memories, messages }) {
+  if (USE_POSTGRES) {
+    const exists = await pool.query('SELECT 1 FROM diaries WHERE invite_code = $1', [inviteCode]);
+    if (exists.rows.length > 0) {
+      return { error: '邀请码已存在' };
+    }
+    const d = await pool.query(
+      'INSERT INTO diaries (invite_code, title, anniversary) VALUES ($1, $2, $3) RETURNING *',
+      [inviteCode, title || '我们的恋爱点滴', anniversary || null]
+    );
+    const diary = d.rows[0];
+    // Restore memories
+    for (const m of (memories || [])) {
+      await pool.query(
+        `INSERT INTO memories (diary_id, date, tag, title, description, author, photos, created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [diary.id, m.date, m.tag||'日常', m.title, m.description||m.desc||'', m.author||'匿名小可爱', JSON.stringify(m.photos||[]), m.created_at||m.createdAt||new Date().toISOString()]
+      );
+    }
+    // Restore messages
+    for (const m of (messages || [])) {
+      await pool.query(
+        'INSERT INTO messages (diary_id, author, content, created_at) VALUES ($1,$2,$3,$4)',
+        [diary.id, m.author||'匿名小可爱', m.content, m.created_at||new Date().toISOString()]
+      );
+    }
+    return diary;
+  } else {
+    const store = readStore();
+    if (store.diaries[inviteCode]) return { error: '邀请码已存在' };
+    store.diarySeq = Math.max(store.diarySeq, 1);
+    store.memorySeq = Math.max(store.memorySeq || 0, (memories||[]).length);
+    store.messageSeq = Math.max(store.messageSeq || 0, (messages||[]).length);
+    const diary = {
+      id: store.diarySeq,
+      invite_code: inviteCode,
+      title: title || '我们的恋爱点滴',
+      anniversary: anniversary || null,
+      created_at: new Date().toISOString(),
+      memories: (memories||[]).map(m => ({...m, description: m.description||m.desc||'', author: m.author||'匿名小可爱', photos: m.photos||[], tag: m.tag||'日常'})),
+      messages: messages || [],
+    };
+    store.diaries[inviteCode] = diary;
+    writeStore(store);
+    return diary;
+  }
+}
+
 async function getDiaryByCode(code) {
   if (USE_POSTGRES) {
     const result = await pool.query('SELECT * FROM diaries WHERE invite_code = $1', [code]);
@@ -341,4 +389,4 @@ async function deleteMessage(code, messageId) {
   }
 }
 
-module.exports = { initDB, createDiary, getDiaryByCode, updateAnniversary, getMemoriesByCode, addMemory, updateMemory, deleteMemory, getMessagesByCode, addMessage, deleteMessage };
+module.exports = { initDB, createDiary, restoreDiary, getDiaryByCode, updateAnniversary, getMemoriesByCode, addMemory, updateMemory, deleteMemory, getMessagesByCode, addMessage, deleteMessage };
