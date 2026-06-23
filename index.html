@@ -804,6 +804,90 @@
     margin: 0 auto;
   }
 
+  /* ===== 新消息弹窗 ===== */
+  .notify-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 9998;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .notify-card {
+    background: white;
+    border-radius: 24px;
+    padding: 30px;
+    max-width: 420px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    text-align: center;
+    animation: slideUp 0.35s ease;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .notify-card .notify-icon {
+    font-size: 2.5em;
+    margin-bottom: 8px;
+    animation: heartbeat 0.6s ease-in-out 3;
+  }
+  .notify-card h3 {
+    font-size: 1.2em;
+    color: var(--text);
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+  .notify-card .notify-hint {
+    font-size: 0.8em;
+    color: var(--text-light);
+    margin-bottom: 16px;
+  }
+  .notify-msg-list {
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 250px;
+    overflow-y: auto;
+    margin-bottom: 18px;
+  }
+  .notify-msg-item {
+    background: var(--pink-lighter);
+    padding: 12px 14px;
+    border-radius: 14px;
+    border-left: 3px solid var(--pink);
+  }
+  .notify-msg-item .n-author {
+    font-weight: 700;
+    font-size: 0.85em;
+    color: var(--rose);
+    margin-bottom: 4px;
+  }
+  .notify-msg-item .n-content {
+    font-size: 0.9em;
+    color: var(--text);
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+  .notify-msg-item .n-time {
+    font-size: 0.7em;
+    color: var(--text-light);
+    margin-top: 4px;
+  }
+  .notify-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+  .notify-actions .btn {
+    flex: 1;
+  }
+
   /* ===== 响应式 ===== */
   @media (max-width: 640px) {
     .header h1 { font-size: 1.8em; }
@@ -1297,7 +1381,10 @@ function connectSocket() {
     if (!messages.find(m => m.id === data.message.id)) {
       messages.push(data.message);
       renderMessages();
-      showToast('💬 有新留言！');
+      const myName = loadMyName();
+      if (data.message.author !== myName) {
+        showMessagePopup([data.message]);
+      }
     }
   });
 
@@ -1434,6 +1521,8 @@ async function loadDiary(code) {
     renderTimeline();
     renderGallery();
     renderMessages();
+    // 检查是否有对方的新留言（延迟一下等 render 完成）
+    setTimeout(() => checkUnreadMessages(), 500);
     console.log('✅ 日记加载成功:', code);
   } catch (e) {
     console.error('加载日记异常:', e);
@@ -1486,6 +1575,8 @@ function saveMyName() {
   saveMyNameToStore(name);
   showToast(`你好呀，${name}！💕`);
   renderTimeline();
+  renderMessages();
+  setTimeout(() => checkUnreadMessages(), 300);
 }
 
 // ====== 导出数据 ======
@@ -1941,6 +2032,89 @@ function showImage(src) {
 
 function closeModal() {
   document.getElementById('imageModal').classList.remove('show');
+}
+
+// ====== 新消息弹窗 ======
+function getLastSeenId() {
+  return parseInt(localStorage.getItem('love_diary_last_seen_' + currentDiaryCode)) || 0;
+}
+
+function setLastSeenId(id) {
+  localStorage.setItem('love_diary_last_seen_' + currentDiaryCode, id);
+}
+
+function checkUnreadMessages() {
+  if (!currentDiaryCode) return;
+  const myName = loadMyName();
+  if (!myName) return; // no name set — nothing to compare
+  const lastSeen = getLastSeenId();
+  const unread = messages.filter(m => m.id > lastSeen && m.author !== myName);
+  if (unread.length > 0) {
+    showMessagePopup(unread);
+  }
+}
+
+function showMessagePopup(unreadList) {
+  dismissMessagePopup(); // remove any existing
+
+  const overlay = document.createElement('div');
+  overlay.className = 'notify-overlay';
+  overlay.id = 'notifyOverlay';
+
+  const maxId = Math.max(...unreadList.map(m => m.id));
+
+  const now = new Date();
+  const itemsHtml = unreadList.map(m => {
+    const t = new Date(m.created_at);
+    const timeStr = t.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' }) + ' ' +
+                    t.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    return `<div class="notify-msg-item">
+      <div class="n-author">💬 ${escapeHtml(m.author || '匿名小可爱')}</div>
+      <div class="n-content">${escapeHtml(m.content)}</div>
+      <div class="n-time">${timeStr}</div>
+    </div>`;
+  }).join('');
+
+  overlay.innerHTML = `<div class="notify-card">
+    <div class="notify-icon">💌</div>
+    <h3>${unreadList.length} 条新留言</h3>
+    <div class="notify-hint">TA 给你留言了，快来看看吧~</div>
+    <div class="notify-msg-list">${itemsHtml}</div>
+    <div class="notify-actions">
+      <button class="btn btn-outline btn-sm" id="notifyDismiss">知道了</button>
+      <button class="btn btn-primary btn-sm" id="notifyReply">💬 回复</button>
+    </div>
+  </div>`;
+
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#notifyDismiss').onclick = () => {
+    setLastSeenId(maxId);
+    dismissMessagePopup();
+  };
+
+  overlay.querySelector('#notifyReply').onclick = () => {
+    setLastSeenId(maxId);
+    dismissMessagePopup();
+    // Focus the message input
+    const textarea = document.getElementById('msgContent');
+    textarea.focus();
+    const board = document.querySelector('.message-board-section');
+    if (board) board.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  // Close on backdrop click (but not on card click)
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      setLastSeenId(maxId);
+      dismissMessagePopup();
+    }
+  });
+}
+
+function dismissMessagePopup() {
+  const existing = document.getElementById('notifyOverlay');
+  if (existing) existing.remove();
 }
 
 // ====== 工具 ======
