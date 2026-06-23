@@ -53,8 +53,15 @@ app.get('/api/diaries/:code', async (req, res) => {
     if (!diary) {
       return res.status(404).json({ error: '日记不存在，请检查邀请码~' });
     }
-    const memories = await db.getMemoriesByCode(code);
-    const messages = await db.getMessagesByCode(code);
+    let memories = await db.getMemoriesByCode(code);
+    let messages = await db.getMessagesByCode(code);
+    // 如果 PG 查询为空但 diary 对象自带数据，使用自带数据
+    if (memories.length === 0 && diary.memories && Array.isArray(diary.memories) && diary.memories.length > 0) {
+      memories = diary.memories;
+    }
+    if (messages.length === 0 && diary.messages && Array.isArray(diary.messages) && diary.messages.length > 0) {
+      messages = diary.messages;
+    }
     res.json({ success: true, diary, memories, messages });
   } catch (e) {
     console.error('获取日记失败:', e.message);
