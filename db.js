@@ -127,7 +127,7 @@ async function createDiary(title) {
     let code;
     for (let i = 0; i < 10; i++) {
       code = generateInviteCode();
-      const exists = await pool.query('SELECT 1 FROM diaries WHERE invite_code = $1', [code]);
+      const exists = await pool.query('SELECT 1 FROM diaries WHERE UPPER(invite_code) = UPPER($1)', [code]);
       if (exists.rows.length === 0) break;
     }
     const result = await pool.query(
@@ -160,7 +160,7 @@ async function createDiary(title) {
 
 async function restoreDiary(inviteCode, { title, anniversary, memories, messages }) {
   if (USE_POSTGRES) {
-    const exists = await pool.query('SELECT 1 FROM diaries WHERE invite_code = $1', [inviteCode]);
+    const exists = await pool.query('SELECT 1 FROM diaries WHERE UPPER(invite_code) = UPPER($1)', [inviteCode]);
     if (exists.rows.length > 0) {
       return { error: '邀请码已存在' };
     }
@@ -208,11 +208,13 @@ async function restoreDiary(inviteCode, { title, anniversary, memories, messages
 
 async function getDiaryByCode(code) {
   if (USE_POSTGRES) {
-    const result = await pool.query('SELECT * FROM diaries WHERE invite_code = $1', [code]);
+    const result = await pool.query('SELECT * FROM diaries WHERE UPPER(invite_code) = UPPER($1)', [code]);
     return result.rows[0] || null;
   } else {
     const store = readStore();
-    return store.diaries[code] || null;
+    const upperCode = code.toUpperCase();
+    const found = Object.keys(store.diaries).find(k => k.toUpperCase() === upperCode);
+    return found ? store.diaries[found] : null;
   }
 }
 
