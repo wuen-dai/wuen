@@ -11,7 +11,7 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-const DATA_FILE = path.join(__dirname, 'data.json');
+const DATA_FILE = path.join(process.env.DATA_DIR || __dirname, 'data.json');
 const USE_POSTGRES = !!process.env.DATABASE_URL;
 
 let pool = null;
